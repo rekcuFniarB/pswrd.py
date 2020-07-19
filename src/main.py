@@ -32,6 +32,8 @@ from kivy.uix.checkbox import CheckBox
 from kivy.uix.dropdown import DropDown
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.core.clipboard import Clipboard
+from kivy.uix.scrollview import ScrollView
+from kivy.core.window import Window
 from lib import pswrd
 
 class Pswrd(App):
@@ -44,7 +46,8 @@ class Pswrd(App):
         self.root.add_widget(self.mainScreen)
         ## set active screen
         self.root.current = 'login'
-        #self.clipboard = Clipboard()
+        #self.root.size = (300, 300)
+        #Window.size = (300,300)
         return self.root
 
     def btn_exit(self, btn):
@@ -92,24 +95,38 @@ class LoginScreen(GridLayout, Screen):
         ''' "Open" button click handler. '''
         main.password = main.loginScreen.password.text
         main.root.current = 'main'
-        #print(main.password)
-
+        
 class MainScreen(GridLayout, Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.cols = 1
         #self.center = (0.5, 0.5)
-        self.size_hint_x = None
+        #self.size_hint_x = None
         #self.width = 300
-        self.pos_hint = {'center_x': 0.18}
-        self.row_force_default = True
-        self.row_default_height = 50
+        #self.pos_hint = {'center_x': 0.18}
+        #self.row_force_default = True
+        #self.row_default_height = 50
         self.add_widget(Menu())
-        self.add_widget(Label(text='User Name (optional):', size_hint_y=None, height=30, center=(0, 0)))
+        self.scroll = ScrollView(size_hint=(1, None),
+            size=(Window.width, Window.height-45)
+            #size=(self.width, self.height - 45),
+        )
+        grid = GridLayout(
+            cols=1, size_hint=(1, None),
+            #pos_hint={'center_x': 0.18},
+            #height=self.height - 45,
+            #height=50,
+            height=500,
+            row_force_default=True,
+            row_default_height=50,
+            #minimum_height=600
+        )
+        
+        #grid.height=grid.minimum_height,
+        grid.add_widget(Label(text='User Name (optional):', size_hint_y=None, height=30, center=(0, 0)))
         self.userName = TextInput(multiline=False, size_hint=(None,None), size=(300, 32),
             pos_hint={'center_x': 100}, center=(0, 0))
-        self.add_widget(self.userName)
-        
+        grid.add_widget(self.userName)
         ## 2 columns row
         self.type = GridLayout(cols=2, height=32, width=300, size_hint=(None, None), center=(0, 0), pos_hint = {'center_x': 0.21})
         self.type.add_widget(Label(text='Type:', height=32))
@@ -123,11 +140,11 @@ class MainScreen(GridLayout, Screen):
         self.type.btn_drop.bind(on_release=self.type.drop.open)
         self.type.drop.bind(on_select=lambda instance, x: setattr(self.type.btn_drop, 'text', x))
         self.type.add_widget(self.type.btn_drop)
-        self.add_widget(self.type)
+        grid.add_widget(self.type)
         
-        self.add_widget(Label(text='Domain:'))
+        grid.add_widget(Label(text='Domain:'))
         self.domain = TextInput(multiline=False, size_hint_y=None, height=32)
-        self.add_widget(self.domain)
+        grid.add_widget(self.domain)
         
         ## 2 columns row
         self.version = obj2 = type('', (), {})
@@ -135,20 +152,20 @@ class MainScreen(GridLayout, Screen):
         _.add_widget(Label(text='Alnum:'))
         self.version.alnum = CheckBox()
         _.add_widget(self.version.alnum)
-        self.add_widget(_)
+        grid.add_widget(_)
         _ = GridLayout(cols=2)
         _.add_widget(Label(text='Compat:'))
         self.version.compat = CheckBox()
         _.add_widget(self.version.compat)
-        self.add_widget(_)
+        grid.add_widget(_)
         _ = GridLayout(cols=2)
         _.add_widget(Label(text='Version (default: 1)'))
         self.version.version = TextInput(multiline=False, text='1', size_hint=(None, None), width=32, height=32)
         _.add_widget(self.version.version)
-        self.add_widget(_)
+        grid.add_widget(_)
         
         self.btn_get = Button(text='Get', on_press=main.get, size_hint_y=None, height=32)
-        self.add_widget(self.btn_get)
+        grid.add_widget(self.btn_get)
         self.result = GridLayout(cols=3, size_hint_y=None, height=40)
         self.result.result = TextInput(multiline=False, size_hint=(None, None), width=220, height=32)
         self.result.add_widget(self.result.result)
@@ -156,10 +173,19 @@ class MainScreen(GridLayout, Screen):
         self.result.show.bind(active=self.check_show)
         self.result.add_widget(self.result.show)
         self.result.add_widget(Label(text='Show', size_hint=(None, None), width=32, height=32))
-        self.add_widget(self.result)
+        grid.add_widget(self.result)
+        
+        grid.bind(minimum_height=grid.setter('height'))
+        self.scroll.add_widget(grid)
+        self.add_widget(self.scroll)
+        # Update scroll height on window resize
+        Window.bind(on_resize=self.on_resize_handler)
         
     def check_show(self, checkbox, value):
         main.get(self.btn_get)
+    
+    def on_resize_handler(self, obj, width, height):
+        self.scroll.height = height - 45
 
 class Menu(GridLayout):
     def __init__(self, **kwargs):
