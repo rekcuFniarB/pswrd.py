@@ -53,6 +53,16 @@ class Pswrd(App):
     def btn_exit(self, btn):
         ''' Return to login screen '''
         self.root.current = 'login'
+        ## Reset all values
+        self.screens['main'].type.btn_drop.text = self.screens['main'].type.types[0]
+        #self.screens['login'].password.text = ''
+        self.screens['main'].userName.text = ''
+        self.screens['main'].domain.text = ''
+        self.screens['main'].version.version.text = '1'
+        self.screens['main'].result.show.active = False
+        self.screens['main'].version.alnum.active = False
+        self.screens['main'].version.compat.active = False
+        self.screens['main'].result.result.text = ''
     
     def get(self, btn):
         values = (
@@ -175,10 +185,9 @@ class MainScreen(GridLayout, Screen):
         grid.bind(minimum_height=grid.setter('height'))
         self.scroll.add_widget(grid)
         self.add_widget(self.scroll)
-        # Update scroll height on window resize
-        #Window.bind(on_resize=self.on_resize_handler)
         
     def check_show(self, checkbox, value):
+        ''' "Show" checkbox handler '''
         main.get(self.btn_get)
     
 class Menu(GridLayout):
