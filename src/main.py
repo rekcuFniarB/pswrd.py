@@ -98,7 +98,7 @@ class LoginScreen(GridLayout, Screen):
         self.row_default_height = 60
         self.padding = (70, 0)
         self.add_widget(Label(text='Master password:', size_hint=(1, None), height=60))
-        self.password = TextInput(password=True, multiline=False, size_hint=(1, None), height=32)
+        self.password = TextInput(password=True, write_tab=False, multiline=False, size_hint=(1, None), height=32)
         self.password.bind(on_text_validate=self.btn_open)
         self.add_widget(self.password)
         self.open = Button(text='Open', size_hint=(1, None), height=32)
@@ -130,7 +130,7 @@ class MainScreen(GridLayout, Screen):
         
         #grid.height=grid.minimum_height,
         grid.add_widget(Label(text='User Name (optional):', size_hint_y=None, height=30, center=(0, 0)))
-        self.userName = TextInput(multiline=False, size_hint=(1,None), size=(300, 32),
+        self.userName = TextInput(multiline=False, write_tab=False, size_hint=(1,None), size=(300, 32),
             #pos_hint={'center_x': 100}, center=(0, 0)
         )
         grid.add_widget(self.userName)
@@ -150,7 +150,7 @@ class MainScreen(GridLayout, Screen):
         grid.add_widget(self.type)
         
         grid.add_widget(Label(text='Domain:'))
-        self.domain = TextInput(multiline=False, size_hint_y=None, height=32)
+        self.domain = TextInput(multiline=False, write_tab=False, size_hint_y=None, height=32)
         grid.add_widget(self.domain)
         
         ## 2 columns row
@@ -167,14 +167,14 @@ class MainScreen(GridLayout, Screen):
         grid.add_widget(_)
         _ = GridLayout(cols=2)
         _.add_widget(Label(text='Version (default: 1)'))
-        self.version.version = TextInput(multiline=False, text='1', size_hint=(None, None), width=32, height=32)
+        self.version.version = TextInput(multiline=False, write_tab=False, text='1', size_hint=(None, None), width=32, height=32)
         _.add_widget(self.version.version)
         grid.add_widget(_)
         
         self.btn_get = Button(text='Get', on_press=main.get, size_hint_y=None, height=32)
         grid.add_widget(self.btn_get)
         self.result = GridLayout(cols=3, size_hint_y=None, height=40)
-        self.result.result = TextInput(multiline=False, size_hint=(1, None), width=220, height=32)
+        self.result.result = TextInput(multiline=False, write_tab=False, size_hint=(1, None), width=220, height=32)
         self.result.add_widget(self.result.result)
         self.result.show = CheckBox(size_hint=(None, None), width=32, height=32)
         self.result.show.bind(active=self.check_show)
