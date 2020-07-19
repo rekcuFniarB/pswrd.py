@@ -23,6 +23,7 @@
 
 import kivy
 kivy.require('1.11.1') # replace with your current kivy version !
+import sys
 from kivy.app import App
 from kivy.uix.label import Label
 from kivy.uix.gridlayout import GridLayout
@@ -45,6 +46,9 @@ class Pswrd(App):
         self.root.add_widget(self.screens['login'])
         self.screens['main'] = MainScreen(name='main')
         self.root.add_widget(self.screens['main'])
+        self.screens['about'] = About(name='about')
+        self.root.add_widget(self.screens['about'])
+        
         ## set active screen
         self.root.current = 'login'
         Window.bind(on_resize=self.on_resize_handler)
@@ -84,11 +88,15 @@ class Pswrd(App):
     
     def on_resize_handler(self, obj, width, height):
         self.screens['main'].scroll.height = height - 45
+        self.screens['about'].scroll.height = height - 45
         for screen in self.screens.values():
             if width < 400:
                 screen.padding = ((width / 100) * 5, 0)
             else:
                 screen.padding = ((width / 100) * 15, 0)
+    
+    def show_help(self, *args, **kvargs):
+        self.root.current = 'about'
 
 class LoginScreen(GridLayout, Screen):
     def __init__(self, **kwargs):
@@ -129,7 +137,7 @@ class MainScreen(GridLayout, Screen):
         )
         
         #grid.height=grid.minimum_height,
-        grid.add_widget(Label(text='User Name (optional):', size_hint_y=None, height=30, center=(0, 0)))
+        grid.add_widget(Label(text='User Name / Login:', size_hint_y=None, height=30, center=(0, 0)))
         self.userName = TextInput(multiline=False, write_tab=False, size_hint=(1,None), size=(300, 32),
             #pos_hint={'center_x': 100}, center=(0, 0)
         )
@@ -156,7 +164,7 @@ class MainScreen(GridLayout, Screen):
         ## 2 columns row
         self.version = obj2 = type('', (), {})
         _ = GridLayout(cols=2)
-        _.add_widget(Label(text='Alnum:'))
+        _.add_widget(Label(text='Alphanumeric only:'))
         self.version.alnum = CheckBox()
         _.add_widget(self.version.alnum)
         grid.add_widget(_)
@@ -191,9 +199,9 @@ class MainScreen(GridLayout, Screen):
         main.get(self.btn_get)
     
 class Menu(GridLayout):
-    def __init__(self, **kwargs):
+    def __init__(self, for_screen='', *args, **kwargs):
         super().__init__(**kwargs)
-        self.cols = 2
+        self.cols = 3
         self.exit = Button(
             text='<',
             size_hint=(None, None),
@@ -205,7 +213,95 @@ class Menu(GridLayout):
         )
         self.exit.bind(on_press=main.btn_exit)
         self.add_widget(self.exit)
+        self.add_widget(Label(text='Pswrd.py'))
+        
+        if for_screen != 'about':
+            self.help = Button(
+                text='Help',
+                size_hint=(None, None),
+                height=32, width=70,
+            )
+            self.help.bind(on_press=main.show_help)
+            self.add_widget(self.help)
+
+class About(GridLayout, Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.cols = 1
+        self.size_hint_x = 1
+        self.padding = (70, 0)
+        self.add_widget(Menu(for_screen='about'))
+        self.scroll = ScrollView(size_hint=(1, None),
+            size=(Window.width, Window.height-45)
+        )
+        grid = GridLayout(
+            cols=1,
+            size_hint=(1, None),
+            height=1100, # otherwise scrolling doesn't work
+            #row_force_default=True,
+            #row_default_height=50,
+        )
+        
+        self.scroll = ScrollView(
+            size_hint=(1, None),
+            size=(Window.width, Window.height-45)
+        )
+        grid.add_widget(Label(
+            #size_hint=(1, None),
+            #height=500,
+            text_size=(300, 1100),
+            markup=True,
+            text='''
+It's a passwords generator and manager.
+It doesn't store your passwords on disc, clouds or elsewhere.
+Everytime you press "Get" button, password is generated on the fly using hashing algorithm based on your input.
+The result is put into the clipboard.
+ 
+[b][u]Usage[/u][/b]
+ 
+Just fill necessary fields and press [b]Get[/b] button. Most fields are optional.
+ 
+[b][/u]Fields synopsis[/u][/b]
+ 
+[b]User Name / Login[/b]
+User name or login.
+ 
+[b]Type[/b]
+Service type dropdown field.
+ 
+[b]Domain[/b]
+Service domain address (example: gmail.com, facebook.com, e.t.c.)
+ 
+[b]Alphanumeric only[/b]
+Check it if service doesn't allow non alphanumeric passwords. This will remove symbols like "/", "+" e.t.c. from password.
+ 
+[b]Compat[/b]
+Compatibility with old version. This option will be removed in future.
+ 
+[b]Version[/b]
+Alter value when you need new password for same credentials. You will have to remember this value too.
+ 
+[b]Show[/b]
+Shows password on the screen. By default it shows only first 3 symbols of password.
+ 
+ 
+Pswrd.py Copyright (C) 2020  rekcuFniarb <retratserif@gmail.com>
+ 
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ 
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ 
+You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
+        '''
+        ))
+        grid.bind(minimum_height=grid.setter('height'))
+        self.scroll.add_widget(grid)
+        self.add_widget(self.scroll)
 
 if __name__ == '__main__':
     main = Pswrd()
-    main.run()
+    try:
+        main.run()
+    except KeyboardInterrupt:
+        sys.stderr.write('Keyboard interrupt\n')
+    
