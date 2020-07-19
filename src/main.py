@@ -40,14 +40,14 @@ class Pswrd(App):
     '''Main class'''
     def build(self):
         self.root  = ScreenManager()
-        self.loginScreen = LoginScreen(name='login')
-        self.root.add_widget(self.loginScreen)
-        self.mainScreen = MainScreen(name='main')
-        self.root.add_widget(self.mainScreen)
+        self.screens = {}
+        self.screens['login'] = LoginScreen(name='login')
+        self.root.add_widget(self.screens['login'])
+        self.screens['main'] = MainScreen(name='main')
+        self.root.add_widget(self.screens['main'])
         ## set active screen
         self.root.current = 'login'
-        #self.root.size = (300, 300)
-        #Window.size = (300,300)
+        Window.bind(on_resize=self.on_resize_handler)
         return self.root
 
     def btn_exit(self, btn):
@@ -56,18 +56,29 @@ class Pswrd(App):
     
     def get(self, btn):
         values = (
-            self.mainScreen.type.btn_drop.text.lower().replace('none', ''),
-            self.loginScreen.password.text,
-            self.mainScreen.userName.text,
-            self.mainScreen.domain.text,
-            self.mainScreen.version.version.text,
+            self.screens['main'].type.btn_drop.text.lower().replace('none', ''),
+            self.screens['login'].password.text,
+            self.screens['main'].userName.text,
+            self.screens['main'].domain.text,
+            self.screens['main'].version.version.text,
         )
-        result = pswrd.gen_from_list(values, alnum=self.mainScreen.version.alnum.active, compat=self.mainScreen.version.compat.active)
+        result = pswrd.gen_from_list(
+            values, alnum=self.screens['main'].version.alnum.active,
+            compat=self.screens['main'].version.compat.active
+        )
         _result = result
-        if not self.mainScreen.result.show.active:
+        if not self.screens['main'].result.show.active:
             result = pswrd.hide_part(result)
-        self.mainScreen.result.result.text = result
+        self.screens['main'].result.result.text = result
         Clipboard.copy(_result)
+    
+    def on_resize_handler(self, obj, width, height):
+        self.screens['main'].scroll.height = height - 45
+        for screen in self.screens.values():
+            if width < 400:
+                screen.padding = ((width / 100) * 5, 0)
+            else:
+                screen.padding = ((width / 100) * 15, 0)
 
 class LoginScreen(GridLayout, Screen):
     def __init__(self, **kwargs):
@@ -75,60 +86,45 @@ class LoginScreen(GridLayout, Screen):
         self.cols = 1
         self.row_force_default = True
         self.row_default_height = 60
-        #self.col_force_default = True
-        #self.col_default_width = 400
-        #self.add_widget(Label(text='User Name'))
-        #self.username = TextInput(multiline=False)
-        #self.add_widget(self.username)
-        #self.center = (0.5, 0.5)
-        self.size_hint_x = None
-        #self.width = 300
-        self.pos_hint = {'center_x': 0.21}
-        self.add_widget(Label(text='Master password:', size_hint=(1, None), height=60, center=(0.5, 0.5)))
-        self.password = TextInput(password=True, multiline=False, size_hint=(None, None), width=300, height=32, center=(0.5, 0.5))
+        self.padding = (70, 0)
+        self.add_widget(Label(text='Master password:', size_hint=(1, None), height=60))
+        self.password = TextInput(password=True, multiline=False, size_hint=(1, None), height=32)
         self.add_widget(self.password)
-        self.open = Button(text='Open', size_hint=(None, None), width=300, height=32, center=(0.5, 0.5))
+        self.open = Button(text='Open', size_hint=(1, None), height=32)
         self.open.bind(on_press=self.btn_open)
         self.add_widget(self.open)
     
     def btn_open(self, btn):
         ''' "Open" button click handler. '''
-        main.password = main.loginScreen.password.text
+        main.password = main.screens['login'].password.text
         main.root.current = 'main'
         
 class MainScreen(GridLayout, Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.cols = 1
-        #self.center = (0.5, 0.5)
-        #self.size_hint_x = None
-        #self.width = 300
-        #self.pos_hint = {'center_x': 0.18}
-        #self.row_force_default = True
-        #self.row_default_height = 50
+        self.size_hint_x = 1
+        self.padding = (70, 0)
         self.add_widget(Menu())
         self.scroll = ScrollView(size_hint=(1, None),
             size=(Window.width, Window.height-45)
-            #size=(self.width, self.height - 45),
         )
         grid = GridLayout(
-            cols=1, size_hint=(1, None),
-            #pos_hint={'center_x': 0.18},
-            #height=self.height - 45,
-            #height=50,
-            height=500,
+            cols=1,
+            size_hint=(1, None),
+            height=500, # otherwise scrolling doesn't work
             row_force_default=True,
             row_default_height=50,
-            #minimum_height=600
         )
         
         #grid.height=grid.minimum_height,
         grid.add_widget(Label(text='User Name (optional):', size_hint_y=None, height=30, center=(0, 0)))
-        self.userName = TextInput(multiline=False, size_hint=(None,None), size=(300, 32),
-            pos_hint={'center_x': 100}, center=(0, 0))
+        self.userName = TextInput(multiline=False, size_hint=(1,None), size=(300, 32),
+            #pos_hint={'center_x': 100}, center=(0, 0)
+        )
         grid.add_widget(self.userName)
         ## 2 columns row
-        self.type = GridLayout(cols=2, height=32, width=300, size_hint=(None, None), center=(0, 0), pos_hint = {'center_x': 0.21})
+        self.type = GridLayout(cols=2, height=32, width=300, size_hint=(1, None), center=(0, 0))
         self.type.add_widget(Label(text='Type:', height=32))
         self.type.drop = DropDown()
         self.type.types = ('None', 'Web', 'Email', 'Chat', 'Other')
@@ -167,31 +163,36 @@ class MainScreen(GridLayout, Screen):
         self.btn_get = Button(text='Get', on_press=main.get, size_hint_y=None, height=32)
         grid.add_widget(self.btn_get)
         self.result = GridLayout(cols=3, size_hint_y=None, height=40)
-        self.result.result = TextInput(multiline=False, size_hint=(None, None), width=220, height=32)
+        self.result.result = TextInput(multiline=False, size_hint=(1, None), width=220, height=32)
         self.result.add_widget(self.result.result)
         self.result.show = CheckBox(size_hint=(None, None), width=32, height=32)
         self.result.show.bind(active=self.check_show)
         self.result.add_widget(self.result.show)
-        self.result.add_widget(Label(text='Show', size_hint=(None, None), width=32, height=32))
+        self.result.add_widget(Label(text='Show', size_hint=(None, None), width=36, height=32))
         grid.add_widget(self.result)
         
         grid.bind(minimum_height=grid.setter('height'))
         self.scroll.add_widget(grid)
         self.add_widget(self.scroll)
         # Update scroll height on window resize
-        Window.bind(on_resize=self.on_resize_handler)
+        #Window.bind(on_resize=self.on_resize_handler)
         
     def check_show(self, checkbox, value):
         main.get(self.btn_get)
     
-    def on_resize_handler(self, obj, width, height):
-        self.scroll.height = height - 45
-
 class Menu(GridLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.cols = 2
-        self.exit = Button(text='<', size_hint=(None, None), width=45, height=45, center=(0.5, 0.5))
+        self.exit = Button(
+            text='<',
+            size_hint=(None, None),
+            width=32, height=32,
+            font_size=42, line_height=0,
+            text_size=(32,22),
+            #valign='top',
+            halign='center',
+        )
         self.exit.bind(on_press=main.btn_exit)
         self.add_widget(self.exit)
 
