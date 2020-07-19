@@ -89,6 +89,7 @@ class LoginScreen(GridLayout, Screen):
         self.padding = (70, 0)
         self.add_widget(Label(text='Master password:', size_hint=(1, None), height=60))
         self.password = TextInput(password=True, multiline=False, size_hint=(1, None), height=32)
+        self.password.bind(on_text_validate=self.btn_open)
         self.add_widget(self.password)
         self.open = Button(text='Open', size_hint=(1, None), height=32)
         self.open.bind(on_press=self.btn_open)
