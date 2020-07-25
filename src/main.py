@@ -52,6 +52,7 @@ class Pswrd(App):
         ## set active screen
         self.root.current = 'login'
         Window.bind(on_resize=self.on_resize_handler)
+        self.on_resize_handler(None, Window.width, Window.height)
         return self.root
 
     def btn_exit(self, btn):
@@ -90,7 +91,7 @@ class Pswrd(App):
         self.screens['main'].scroll.height = height - 45
         self.screens['about'].scroll.height = height - 45
         for screen in self.screens.values():
-            if width < 400:
+            if width < 600:
                 screen.padding = ((width / 100) * 5, 0)
             else:
                 screen.padding = ((width / 100) * 15, 0)
@@ -106,10 +107,10 @@ class LoginScreen(GridLayout, Screen):
         self.row_default_height = 60
         self.padding = (70, 0)
         self.add_widget(Label(text='Master password:', size_hint=(1, None), height=60))
-        self.password = TextInput(password=True, write_tab=False, multiline=False, size_hint=(1, None), height=32)
+        self.password = TextInput(password=True, write_tab=False, multiline=False, size_hint=(1, None), height=40)
         self.password.bind(on_text_validate=self.btn_open)
         self.add_widget(self.password)
-        self.open = Button(text='Open', size_hint=(1, None), height=32)
+        self.open = Button(text='Open', size_hint=(1, None), height=40)
         self.open.bind(on_press=self.btn_open)
         self.add_widget(self.open)
     
@@ -138,56 +139,58 @@ class MainScreen(GridLayout, Screen):
         
         #grid.height=grid.minimum_height,
         grid.add_widget(Label(text='User Name / Login:', size_hint_y=None, height=30, center=(0, 0)))
-        self.userName = TextInput(multiline=False, write_tab=False, size_hint=(1,None), size=(300, 32),
+        self.userName = TextInput(multiline=False, write_tab=False, size_hint=(1,None), size=(300, 40),
             #pos_hint={'center_x': 100}, center=(0, 0)
         )
         grid.add_widget(self.userName)
         ## 2 columns row
-        self.type = GridLayout(cols=2, height=32, width=300, size_hint=(1, None), center=(0, 0))
-        self.type.add_widget(Label(text='Type:', height=32))
+        self.type = GridLayout(cols=2, height=40, width=300, size_hint=(1, None), center=(0, 0))
+        self.type.add_widget(Label(text='Type:', height=40))
         self.type.drop = DropDown()
         self.type.types = ('None', 'Web', 'Email', 'Chat', 'Other')
         for t in self.type.types:
-            _btn = Button(text=t, size_hint_y=None, height=32)
+            _btn = Button(text=t, size_hint_y=None, height=40)
             _btn.bind(on_release=lambda _b: self.type.drop.select(_b.text))
             self.type.drop.add_widget(_btn)
-        self.type.btn_drop = Button(text=self.type.types[0], size_hint=(None, None), height=32)
+        self.type.btn_drop = Button(text=self.type.types[0], size_hint=(None, None), height=40)
         self.type.btn_drop.bind(on_release=self.type.drop.open)
         self.type.drop.bind(on_select=lambda instance, x: setattr(self.type.btn_drop, 'text', x))
         self.type.add_widget(self.type.btn_drop)
         grid.add_widget(self.type)
         
         grid.add_widget(Label(text='Domain:'))
-        self.domain = TextInput(multiline=False, write_tab=False, size_hint_y=None, height=32)
+        self.domain = TextInput(multiline=False, write_tab=False, size_hint_y=None, height=40)
         grid.add_widget(self.domain)
         
         ## 2 columns row
         self.version = obj2 = type('', (), {})
         _ = GridLayout(cols=2)
         _.add_widget(Label(text='Alphanumeric only:'))
-        self.version.alnum = CheckBox()
+        self.version.alnum = CheckBox(size_hint=(None, None), width=40, height=40)
         _.add_widget(self.version.alnum)
         grid.add_widget(_)
         _ = GridLayout(cols=2)
         _.add_widget(Label(text='Compat:'))
-        self.version.compat = CheckBox()
+        self.version.compat = CheckBox(size_hint=(None, None), width=40, height=40)
         _.add_widget(self.version.compat)
         grid.add_widget(_)
         _ = GridLayout(cols=2)
         _.add_widget(Label(text='Version (default: 1)'))
-        self.version.version = TextInput(multiline=False, write_tab=False, text='1', size_hint=(None, None), width=32, height=32)
+        self.version.version = TextInput(multiline=False, write_tab=False, text='1', size_hint=(None, None), width=40, height=40)
         _.add_widget(self.version.version)
         grid.add_widget(_)
         
-        self.btn_get = Button(text='Get', on_press=main.get, size_hint_y=None, height=32)
+        self.btn_get = Button(text='Get', on_press=main.get, size_hint_y=None, height=40)
         grid.add_widget(self.btn_get)
         self.result = GridLayout(cols=3, size_hint_y=None, height=40)
-        self.result.result = TextInput(multiline=False, write_tab=False, size_hint=(1, None), width=220, height=32)
+        self.result.result = TextInput(multiline=False, write_tab=False, size_hint=(1, None), width=220, height=40)
         self.result.add_widget(self.result.result)
-        self.result.show = CheckBox(size_hint=(None, None), width=32, height=32)
+        self.result.show = CheckBox(size_hint=(None, None), width=40, height=40)
         self.result.show.bind(active=self.check_show)
         self.result.add_widget(self.result.show)
-        self.result.add_widget(Label(text='Show', size_hint=(None, None), width=36, height=32))
+        self.result.show_label = Label(text='Show', size_hint=(None, None), width=36, height=40)
+        #self.result.show_label.bind(on_touch_down=self.on_touch_show_label)
+        self.result.add_widget(self.result.show_label)
         grid.add_widget(self.result)
         
         grid.bind(minimum_height=grid.setter('height'))
@@ -198,18 +201,28 @@ class MainScreen(GridLayout, Screen):
         ''' "Show" checkbox handler '''
         main.get(self.btn_get)
     
+    def on_touch_show_label(self, touch, *args, **kvargs):
+        print(touch)
+        if touch is self.result.show_label:
+            self.result.show.active = not self.result.show.active
+        return False
+    
+    def void(self, *args, **kvargs):
+        pass
+    
 class Menu(GridLayout):
     def __init__(self, for_screen='', *args, **kwargs):
         super().__init__(**kwargs)
         self.cols = 3
         self.exit = Button(
-            text='<',
+            #text='<',
+            text='Exit',
             size_hint=(None, None),
-            width=32, height=32,
-            font_size=42, line_height=0,
-            text_size=(32,22),
+            width=70, height=40,
+            #font_size=42, line_height=0,
+            #text_size=(40,22),
             #valign='top',
-            halign='center',
+            #halign='center',
         )
         self.exit.bind(on_press=main.btn_exit)
         self.add_widget(self.exit)
@@ -219,7 +232,7 @@ class Menu(GridLayout):
             self.help = Button(
                 text='Help',
                 size_hint=(None, None),
-                height=32, width=70,
+                height=40, width=70,
             )
             self.help.bind(on_press=main.show_help)
             self.add_widget(self.help)
@@ -237,7 +250,7 @@ class About(GridLayout, Screen):
         grid = GridLayout(
             cols=1,
             size_hint=(1, None),
-            height=1100, # otherwise scrolling doesn't work
+            height=2000, # otherwise scrolling doesn't work
             #row_force_default=True,
             #row_default_height=50,
         )
@@ -249,7 +262,7 @@ class About(GridLayout, Screen):
         grid.add_widget(Label(
             #size_hint=(1, None),
             #height=500,
-            text_size=(300, 1100),
+            text_size=(400, 2000),
             markup=True,
             text='''
 It's a passwords generator and manager.
