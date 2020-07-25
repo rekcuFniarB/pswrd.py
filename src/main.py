@@ -35,11 +35,14 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.core.clipboard import Clipboard
 from kivy.uix.scrollview import ScrollView
 from kivy.core.window import Window
+from kivy.utils import platform
 from lib import pswrd
 
 class Pswrd(App):
     '''Main class'''
     def build(self):
+        self.icon = 'img/pswrd.py.png'
+        Window.softinput_mode = 'below_target' # soft keyboard workaround
         self.root  = ScreenManager()
         self.screens = {}
         self.screens['login'] = LoginScreen(name='login')
@@ -147,7 +150,7 @@ class MainScreen(GridLayout, Screen):
         self.type = GridLayout(cols=2, height=40, width=300, size_hint=(1, None), center=(0, 0))
         self.type.add_widget(Label(text='Type:', height=40))
         self.type.drop = DropDown()
-        self.type.types = ('None', 'Web', 'Email', 'Chat', 'Other')
+        self.type.types = ('None', 'Web', 'Email', 'SSH', 'Chat', 'Other')
         for t in self.type.types:
             _btn = Button(text=t, size_hint_y=None, height=40)
             _btn.bind(on_release=lambda _b: self.type.drop.select(_b.text))
@@ -247,10 +250,16 @@ class About(GridLayout, Screen):
         self.scroll = ScrollView(size_hint=(1, None),
             size=(Window.width, Window.height-45)
         )
+        
+        if platform == 'android':
+            height = 2000
+        else:
+            height = 1000
+        
         grid = GridLayout(
             cols=1,
             size_hint=(1, None),
-            height=2000, # otherwise scrolling doesn't work
+            height=height, # otherwise scrolling doesn't work
             #row_force_default=True,
             #row_default_height=50,
         )
@@ -262,7 +271,7 @@ class About(GridLayout, Screen):
         grid.add_widget(Label(
             #size_hint=(1, None),
             #height=500,
-            text_size=(400, 2000),
+            text_size=(400, height),
             markup=True,
             text='''
 It's a passwords generator and manager.
