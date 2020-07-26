@@ -318,6 +318,8 @@ class Result(Popup):
         
         self.result = TextInput(multiline=False, write_tab=False, size_hint=(1, None), width=220, height=40)
         self.content.add_widget(self.result)
+        self.info = Label(text='')
+        self.content.add_widget(self.info)
         row = GridLayout(cols=4, size_hint_y=None, height=40)
         self.show = CheckBox(size_hint=(None, None), width=60, height=40)
         self.show.bind(active=self.check_show)
@@ -340,8 +342,16 @@ class Result(Popup):
             ## set new value
             self.value = value
             ## Put to clipboard
-            Clipboard.copy(self.value)
-            if self.show.active:
+            if value == 'NULL':
+                self.info.text = 'Failed to generate password. No file read permission?'
+            else:
+                Clipboard.copy(value)
+                clipboard_check = Clipboard.paste()
+                if type(clipboard_check) is not bytes:
+                    clipboard_check = clipboard_check.encode('utf-8')
+                if clipboard_check == value:
+                    self.info.text = 'Copied to clipboard'
+            if self.show.active or value == 'NULL':
                 ## show full value
                 self.result.text = self.value
             else:
