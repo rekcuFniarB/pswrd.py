@@ -36,6 +36,8 @@ from kivy.core.clipboard import Clipboard
 from kivy.uix.scrollview import ScrollView
 from kivy.core.window import Window
 from kivy.utils import platform
+from kivy.uix.popup import Popup
+from kivy.uix.filechooser import FileChooserListView, FileChooserListView
 from lib import pswrd
 
 class Pswrd(App):
@@ -51,6 +53,8 @@ class Pswrd(App):
         self.root.add_widget(self.screens['main'])
         self.screens['about'] = About(name='about')
         self.root.add_widget(self.screens['about'])
+        self.screens['key'] = KeyFile(name='key')
+        self.root.add_widget(self.screens['key'])
         
         ## set active screen
         self.root.current = 'login'
@@ -67,10 +71,10 @@ class Pswrd(App):
         self.screens['main'].userName.text = ''
         self.screens['main'].domain.text = ''
         self.screens['main'].version.version.text = '1'
-        self.screens['main'].result.show.active = False
+        #self.screens['main'].result.show.active = False
         self.screens['main'].version.alnum.active = False
         self.screens['main'].version.compat.active = False
-        self.screens['main'].result.result.text = ''
+        #self.screens['main'].result.result.text = ''
     
     def get(self, btn):
         values = (
@@ -84,11 +88,17 @@ class Pswrd(App):
             values, alnum=self.screens['main'].version.alnum.active,
             compat=self.screens['main'].version.compat.active
         )
-        _result = result
-        if not self.screens['main'].result.show.active:
-            result = pswrd.hide_part(result)
-        self.screens['main'].result.result.text = result
-        Clipboard.copy(_result)
+        ## Create popup with result
+        Result().val(result)
+    
+    def gen_from_file(self, filename):
+        result = pswrd.gen_from_file(
+            filename,
+            alnum=self.screens['key'].alnum.active,
+            salt=self.screens['login'].password.text
+        )
+        ## Create popup with result
+        Result().val(result)
     
     def on_resize_handler(self, obj, width, height):
         self.screens['main'].scroll.height = height - 45
@@ -101,6 +111,9 @@ class Pswrd(App):
     
     def show_help(self, *args, **kvargs):
         self.root.current = 'about'
+    
+    def show_key_screen(self, *args, **kvargs):
+        self.root.current = 'key'
 
 class LoginScreen(GridLayout, Screen):
     def __init__(self, **kwargs):
@@ -185,38 +198,15 @@ class MainScreen(GridLayout, Screen):
         
         self.btn_get = Button(text='Get', on_press=main.get, size_hint_y=None, height=40)
         grid.add_widget(self.btn_get)
-        self.result = GridLayout(cols=3, size_hint_y=None, height=40)
-        self.result.result = TextInput(multiline=False, write_tab=False, size_hint=(1, None), width=220, height=40)
-        self.result.add_widget(self.result.result)
-        self.result.show = CheckBox(size_hint=(None, None), width=40, height=40)
-        self.result.show.bind(active=self.check_show)
-        self.result.add_widget(self.result.show)
-        self.result.show_label = Label(text='Show', size_hint=(None, None), width=36, height=40)
-        #self.result.show_label.bind(on_touch_down=self.on_touch_show_label)
-        self.result.add_widget(self.result.show_label)
-        grid.add_widget(self.result)
         
         grid.bind(minimum_height=grid.setter('height'))
         self.scroll.add_widget(grid)
         self.add_widget(self.scroll)
-        
-    def check_show(self, checkbox, value):
-        ''' "Show" checkbox handler '''
-        main.get(self.btn_get)
-    
-    def on_touch_show_label(self, touch, *args, **kvargs):
-        print(touch)
-        if touch is self.result.show_label:
-            self.result.show.active = not self.result.show.active
-        return False
-    
-    def void(self, *args, **kvargs):
-        pass
-    
+            
 class Menu(GridLayout):
     def __init__(self, for_screen='', *args, **kwargs):
         super().__init__(**kwargs)
-        self.cols = 3
+        self.cols = 4
         self.exit = Button(
             #text='<',
             text='Exit',
@@ -229,6 +219,16 @@ class Menu(GridLayout):
         )
         self.exit.bind(on_press=main.btn_exit)
         self.add_widget(self.exit)
+        
+        if for_screen != 'key':
+            self.key = Button(
+                text='Key',
+                size_hint=(None,None),
+                size=(70,40)
+            )
+            self.key.bind(on_press=main.show_key_screen)
+            self.add_widget(self.key)
+        
         self.add_widget(Label(text='Pswrd.py'))
         
         if for_screen != 'about':
@@ -239,6 +239,116 @@ class Menu(GridLayout):
             )
             self.help.bind(on_press=main.show_help)
             self.add_widget(self.help)
+
+class KeyFile(GridLayout, Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.current_file = None
+        self.last_path = None
+        if platform == 'android':
+            self.last_path = '/storage/emulated/0'
+        self.cols = 1
+        self.size_hint_x = 1
+        self.padding = (70, 0)
+        self.row_force_default = True
+        self.row_default_height = 60
+        self.add_widget(Menu(for_screen='key'))
+        self.add_widget(Label(text='Use any file as password source', size_hint=(1, None), height=60))
+        row = GridLayout(
+            cols=2,
+            row_force_default=True,
+            row_default_height=60
+        )
+        row.add_widget(Label(text='Alphanumeric only:'))
+        self.alnum = CheckBox(size_hint=(None, None), width=40, height=40)
+        row.add_widget(self.alnum)
+        self.add_widget(row)
+        self.selectFile = Button(text='Select file', size_hint=(1, None), height=40)
+        self.selectFile.bind(on_press=self.btn_select_file)
+        self.add_widget(self.selectFile)
+        self.chooser = None
+        
+    def btn_select_file(self, btn):
+        ## Create popup
+        if self.last_path:
+            self.fileChooser = FileChooserListView(path=self.last_path)
+        else:
+            self.fileChooser = FileChooserListView()
+        self.fileChooser.bind(on_touch_up=self.on_file_select)
+        if self.chooser == None:
+            self.chooser = Popup(title='Select file',
+                size_hint=(None, None), size=(Window.width-50, Window.height-50),
+                #content=self.fileChooser
+            )
+        self.chooser.content = self.fileChooser
+        ## Show popup
+        self.chooser.open()
+    
+    def on_file_select(self, *args, **kwargs):
+        if len(self.fileChooser.selection) > 0:
+            if self.current_file == self.fileChooser.selection[0]:
+                self.current_file = None
+            else:
+                self.current_file = self.fileChooser.selection[0]
+                if self.current_file:
+                    self.chooser.dismiss()
+                    self.last_path = self.fileChooser.path
+                    del(self.fileChooser)
+                    main.gen_from_file(self.current_file)
+
+class Result(Popup):
+    def __init__(self, **kwargs):
+        self.title = 'Result'
+        self.value = ''
+        self.size_hint = (None, None)
+        padding = Window.width / 70
+        self.content = GridLayout(
+            cols=1,
+            size_hint_x=1,
+            padding=(padding, 0),
+            row_force_default=True,
+            row_default_height=60        
+        )
+        super().__init__(size=(Window.width-70, Window.height-70), **kwargs)
+        self.open()
+        
+        self.result = TextInput(multiline=False, write_tab=False, size_hint=(1, None), width=220, height=40)
+        self.content.add_widget(self.result)
+        row = GridLayout(cols=4, size_hint_y=None, height=40)
+        self.show = CheckBox(size_hint=(None, None), width=60, height=40)
+        self.show.bind(active=self.check_show)
+        row.add_widget(self.show)
+        row.show_label = Label(text='Show', size_hint=(None, None), width=36, height=40)
+        row.add_widget(row.show_label)
+        row.add_widget(Label(text='', size_hint=(1, None), height=40))
+        self.btn_close = Button(text='Ok', size_hint=(None,None), size=(70,40))
+        self.btn_close.bind(on_press=self.btn_close_handler)
+        row.add_widget(self.btn_close)
+        self.content.add_widget(row)
+        
+    def btn_close_handler(self, *args, **kwargs):
+        self.dismiss()
+    
+    def val(self, value=None):
+        if value == None:
+            return self.value
+        else:
+            ## set new value
+            self.value = value
+            ## Put to clipboard
+            Clipboard.copy(self.value)
+            if self.show.active:
+                ## show full value
+                self.result.text = self.value
+            else:
+                ## checkbox unchecked, show part of value
+                if type(value) is not bytes:
+                    value = value.encode('utf-8')
+                self.result.text = pswrd.hide_part(value)
+    
+    ## Refresh dislpay value according to checkbox state
+    def check_show(self, *args, **kwargs):
+        self.val(self.val())
 
 class About(GridLayout, Screen):
     def __init__(self, **kwargs):

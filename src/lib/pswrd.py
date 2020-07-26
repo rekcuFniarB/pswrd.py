@@ -39,6 +39,27 @@ def gen_from_list(values, compat=False, alnum=False):
     vals = vals.encode('utf-8')
     return gen(vals, alnum)
 
+def gen_from_file(filename, salt=b'', alnum=False):
+    if type(salt) is not bytes:
+        salt = salt.encode('utf-8')
+    md5hash = md5(salt)
+    try:
+        with open(filename, 'rb') as f:
+            end = False
+            while not end:
+                chunk = f.read(1024 * 1024)
+                if (chunk):
+                    md5hash.update(chunk)
+                else:
+                    end = True
+    except:
+        return 'NULL'
+    
+    result = b64encode(md5hash.digest()[0:15])
+    if alnum:
+        result = result.replace(b'/', b'').replace(b'+', b'').replace(b'.', b'').replace(b'-', b'').replace(b'_', b'').replace(b'=', b'')
+    return result
+
 def hide_part(value):
     length = len(value) - 3
     visible_part = value[0:3]
