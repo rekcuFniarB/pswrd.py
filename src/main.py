@@ -220,7 +220,7 @@ class Menu(GridLayout):
         self.exit.bind(on_press=main.btn_exit)
         self.add_widget(self.exit)
         
-        if for_screen != 'key':
+        if for_screen not in ('key', 'about'):
             self.key = Button(
                 text='Key',
                 size_hint=(None,None),
