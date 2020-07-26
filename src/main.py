@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-##    Pswrd.py
+##    Pswrd
 ##    Copyright (C) 2020  rekcuFniarB <retratserif@gmail.com>
 ##
 ##    This program is free software: you can redistribute it and/or modify
@@ -229,7 +229,7 @@ class Menu(GridLayout):
             self.key.bind(on_press=main.show_key_screen)
             self.add_widget(self.key)
         
-        self.add_widget(Label(text='Pswrd.py'))
+        self.add_widget(Label(text='Pswrd'))
         
         if for_screen != 'about':
             self.help = Button(
@@ -247,6 +247,8 @@ class KeyFile(GridLayout, Screen):
         self.last_path = None
         if platform == 'android':
             self.last_path = '/storage/emulated/0'
+            from android.permissions import request_permissions, Permission
+            request_permissions([Permission.READ_EXTERNAL_STORAGE])
         self.cols = 1
         self.size_hint_x = 1
         self.padding = (70, 0)
@@ -277,7 +279,7 @@ class KeyFile(GridLayout, Screen):
         self.fileChooser.bind(on_touch_up=self.on_file_select)
         if self.chooser == None:
             self.chooser = Popup(title='Select file',
-                size_hint=(None, None), size=(Window.width-50, Window.height-50),
+                size_hint=(None, None), size=(Window.width-50, Window.height-100),
                 #content=self.fileChooser
             )
         self.chooser.content = self.fileChooser
@@ -294,6 +296,8 @@ class KeyFile(GridLayout, Screen):
                     self.chooser.dismiss()
                     self.last_path = self.fileChooser.path
                     del(self.fileChooser)
+                    del(self.chooser)
+                    self.chooser = None
                     main.gen_from_file(self.current_file)
 
 class Result(Popup):
@@ -417,7 +421,7 @@ Alter value when you need new password for same credentials. You will have to re
 Shows password on the screen. By default it shows only first 3 symbols of password.
  
  
-Pswrd.py Copyright (C) 2020  rekcuFniarb <retratserif@gmail.com>
+Pswrd Copyright (C) 2020  rekcuFniarB <retratserif@gmail.com>
  
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  
