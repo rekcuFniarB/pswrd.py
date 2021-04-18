@@ -60,7 +60,9 @@ def gen_from_file(filename, salt=b'', alnum=False):
     return result
 
 def sanitize(value, alnum=False):
-    for _ in [b'/', b' ', b'\n']:
+    value = value.replace(b'/', b'_')
+    
+    for _ in [b' ', b'\n']:
         value = value.replace(_, b'')
     
     if alnum:
