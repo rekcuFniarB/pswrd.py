@@ -25,6 +25,8 @@ Notes:
 
 There is a cli version of this util written as pure shell script: https://github.com/rekcuFniarB/pswrd#readme
 
+Why this wheel was reinvented? Well, I needed a simple util which doesn't require syncing data between devices.
+
 Requirements:
 -------------
 
