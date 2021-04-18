@@ -22,8 +22,7 @@ def gen(input, alnum=False):
     '''Gen password string from bytes input.
     alnum: bool, remove non alphanumeric values '''
     result = b64encode(md5(input).digest()[0:15])
-    if alnum:
-        result = result.replace(b'/', b'').replace(b'+', b'').replace(b'.', b'').replace(b'-', b'').replace(b'_', b'').replace(b'=', b'')
+    result = sanitize(result, alnum)
     return result
 
 def gen_from_list(values, compat=False, alnum=False):
@@ -56,12 +55,20 @@ def gen_from_file(filename, salt=b'', alnum=False):
         return 'NULL'
     
     result = b64encode(md5hash.digest()[0:15])
-    if alnum:
-        result = result.replace(b'/', b'').replace(b'+', b'').replace(b'.', b'').replace(b'-', b'').replace(b'_', b'').replace(b'=', b'')
+    result = sanitize(result, alnum)
+    
     return result
+
+def sanitize(value, alnum=False):
+    for _ in [b'/', b' ', b'\n']:
+        value = value.replace(_, b'')
+    
+    if alnum:
+        for _ in [b'+', b'.', b'-', b'_', b'=']:
+            value = value.replace(_, b'')
+    return value
 
 def hide_part(value):
     length = len(value) - 3
     visible_part = value[0:3]
     return b'%s%s' % (visible_part, b'*' * length)
-    
